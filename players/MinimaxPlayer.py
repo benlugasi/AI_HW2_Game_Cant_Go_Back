@@ -2,6 +2,7 @@
 MiniMax Player
 """
 from players.AbstractPlayer import AbstractPlayer
+import numpy as np
 #TODO: you can import more modules, if needed
 
 
@@ -19,8 +20,10 @@ class Player(AbstractPlayer):
             - board: np.array, a 2D matrix of the board.
         No output is expected.
         """
-        #TODO: erase the following line and implement this function.
-        raise NotImplementedError
+        self.board = board
+        pos = np.where(board == 1)
+        # convert pos to tuple of ints
+        self.pos = tuple(ax[0] for ax in pos)
 
     def make_move(self, time_limit, players_score):
         """Make move with this Player.
@@ -29,7 +32,27 @@ class Player(AbstractPlayer):
         output:
             - direction: tuple, specifing the Player's movement, chosen from self.directions
         """
-        #TODO: erase the following line and implement this function.
+        assert self.count_ones(self.board) == 1
+
+        prev_pos = self.pos
+        self.board[prev_pos] = -1
+
+        assert self.count_ones(self.board) == 0
+
+        best_move, best_move_score, best_new_pos = None, float('-inf'), None
+        for d in self.directions:
+            i = self.pos[0] + d[0]
+            j = self.pos[1] + d[1]
+
+            if 0 <= i < len(self.board) and 0 <= j < len(self.board[0]) and (self.board[i][j] not in [-1, 1, 2]):   # then move is legal
+                new_pos = (i, j)
+                assert self.board[new_pos] == 0
+                self.board[new_pos] = 1
+                assert self.count_ones(self.board) == 1
+
+
+
+
         raise NotImplementedError
 
 
