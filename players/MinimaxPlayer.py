@@ -7,6 +7,7 @@ from players.AbstractPlayer import AbstractPlayer
 import numpy as np
 import time
 import SearchAlgos
+import utils
 #TODO: you can import more modules, if needed
 
 
@@ -23,11 +24,11 @@ class Player(AbstractPlayer):
             self.pos = np.where(board == playerToMove)
             self.score = score
 
-    def playerCanMove(self,board,pos):
+    def playerCanMove(self, board, pos):
         for d in self.directions:
             i = pos[0] + d[0]
             j = pos[1] + d[1]
-            if 0 <= i < len(board) and 0 <= j < len(board[0]) and (board[i][j] not in [-1, 1, 2]):   # then move is legal
+            if 0 <= i < len(board) and 0 <= j < len(board[0]) and (board[i][j] not in [-1, 1, 2]):  # then move is legal
                 return True
         return False
 
@@ -63,9 +64,8 @@ class Player(AbstractPlayer):
         new_board[state.pos] = -1
         new_board[new_pos] = playerToMove
         new_player_to_move = self.nextTurn(playerToMove)
-        new_player_to_move_pos_np = np.where(new_board == new_player_to_move)
-        new_player_to_move_pos = tuple(ax[0] for ax in new_player_to_move_pos_np)
-        if not self.playerCanMove(new_board,new_pos) and self.playerCanMove(new_board,new_player_to_move_pos):
+        new_player_to_move_pos = utils.getPlayerPos(new_board, new_player_to_move)
+        if not self.playerCanMove(new_board, new_pos) and self.playerCanMove(new_board, new_player_to_move_pos):
             penalty = self.penalty_score
         new_score = state.score
         new_score[playerToMove - 1] += state.board[new_pos] + penalty  # the fruit was on my pos + penalty if there any
@@ -98,12 +98,10 @@ class Player(AbstractPlayer):
         No output is expected.
         """
         self.board = board
-        pos = np.where(board == 1)
-        # convert pos to tuple of ints
-        self.pos = tuple(ax[0] for ax in pos)
+        self.pos = utils.getPlayerPos(board, 1)
 
-    def count_ones(board):
-        counter = len(np.where(board == 1)[0])
+    def count_val(self, board,val):
+        counter = len(np.where(board == val)[0])
         return counter
 
     def make_move(self, time_limit, players_score):
@@ -113,25 +111,27 @@ class Player(AbstractPlayer):
         output:
             - direction: tuple, specifing the Player's movement, chosen from self.directions
         """
-
+        start = time.time()
         cur_state = Player.PlayerState(self.board, 1, players_score)
         depth = 1
         move = self.minimax.search(cur_state, depth, 1, time_limit)[1]
         while True:
-            try:
+            try:   # TODO: handle when finished before max depth
                 depth += 1
-                move = self.minimax.search(cur_state, depth, 1, time_limit)[1]
+                time_elapsed = time.time() - start
+                move = self.minimax.search(cur_state, depth, 1, time_limit-time_elapsed)[1]
             except TimeoutError:
+                assert (self.count_val(self.board, 1) == 1)
+                self.board[self.pos] = -1
+                assert (self.count_val(self.board, 1) == 0)
+                i = self.pos[0] + move[0]
+                j = self.pos[1] + move[1]
+                new_pos = (i, j)
+                assert self.board[new_pos] not in [-1, 1, 2]
+                self.board[new_pos] = 1
+                assert self.count_val(self.board, 1) == 1
+                self.pos = new_pos
                 return move
-
-        assert self.count_ones(self.board) == 1
-
-        prev_pos = self.pos
-        self.board[prev_pos] = -1
-
-        assert self.count_ones(self.board) == 0
-
-
 
     def set_rival_move(self, pos):
         """Update your info, given the new position of the rival.
@@ -139,9 +139,19 @@ class Player(AbstractPlayer):
             - pos: tuple, the new position of the rival.
         No output is expected
         """
+        # rival (3,3) -> pos(3,4)
+        rival_prev_pos = utils.getPlayerPos(self.board, 2)
+        self.board[rival_prev_pos] = -1
+        i = rival_prev_pos[0] + pos[0]
+        j = rival_prev_pos[1] + pos[1]
+        new_pos = (i, j)
+        assert self.board[new_pos] not in [-1, 1, 2]
+        self.board[new_pos] = 2
+        assert self.count_val(self.board, 2) == 1
+
+
         #TODO: erase the following line and implement this function.
         raise NotImplementedError
-
 
     def update_fruits(self, fruits_on_board_dict):
         """Update your info on the current fruits on board (if needed).

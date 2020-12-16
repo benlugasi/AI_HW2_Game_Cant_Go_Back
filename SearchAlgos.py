@@ -57,12 +57,13 @@ class MiniMax(SearchAlgos):
             curMin = [float('inf'), state_to_return]
             for c in children:
                 time_elapsed = time.time() - start
+                peform
                 child_value = self.rbMinimax_rec(c, depth - 1, playerToMove, remaining_time - time_elapsed)
                 if child_value[0] < curMin[0]:
                     curMin = child_value
             return curMin
 
-    def search(self, state, depth, maximizing_player, time_limit):
+    def search(self, state, depth, maximizing_player, time_limit = float('-inf')):
         """Start the MiniMax algorithm.
         :param state: The state to start from.
         :param depth: The maximum allowed depth for the algorithm.
