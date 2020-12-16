@@ -1,5 +1,7 @@
 """Search Algos: MiniMax, AlphaBeta
 """
+import time
+
 from utils import ALPHA_VALUE_INIT, BETA_VALUE_INIT
 
 #TODO: you can import more modules, if needed
@@ -24,52 +26,58 @@ class SearchAlgos:
 
 
 class MiniMax(SearchAlgos):
-
-    def __init__(self,utility, succ, perform_move, goal, heuristic_function):
-        self.utility = utility
-        self.succ = succ
-        self.perform_move = perform_move
-        self.goal = goal
+    def __init__(self, utility, succ, perform_move, goal, turn, heuristic_function):
+        SearchAlgos.__init__(utility, succ, perform_move, goal)
+        self.turn = turn
         self.heuristic_function = heuristic_function
 
-    def _rbMiniMaxHelp_(self, state, depth, maximizing_player):
+    def rbMinimax_rec(self, state, depth, maximizing_player, remaining_time):
+        if remaining_time <= 0:
+            raise TimeoutError
+        start = time.time()
         if self.goal(state):
             return [self.utility(state, maximizing_player), state]
         if depth == 0:
             return [self.heuristic_function(state, maximizing_player), state]
 
-        #inits for the recursion
+        # init for the recursion
         state_to_return = state
-        playerToMove = self.perform_move(state)
+        playerToMove = self.turn(state)  # Turn
         children = self.succ(state, playerToMove)
 
         if playerToMove == maximizing_player:
             curMax = [float('-inf'), state_to_return]
             for c in children:
-                child_value = self._rbMiniMaxHelp_(c, depth-1, playerToMove)
+                time_elapsed = time.time() - start
+                child_value = self.rbMinimax_rec(c, depth - 1, playerToMove, remaining_time - time_elapsed)
                 if child_value[0] > curMax[0]:
                     curMax = child_value
             return curMax
         else:
-            curMin = float('inf')
+            curMin = [float('inf'), state_to_return]
             for c in children:
-                child_value = self._rbMiniMaxHelp_(c, depth-1, playerToMove)
+                time_elapsed = time.time() - start
+                child_value = self.rbMinimax_rec(c, depth - 1, playerToMove, remaining_time - time_elapsed)
                 if child_value[0] < curMin[0]:
                     curMin = child_value
             return curMin
 
-    def search(self, state, depth, maximizing_player):
+    def search(self, state, depth, maximizing_player, time_limit):
         """Start the MiniMax algorithm.
         :param state: The state to start from.
         :param depth: The maximum allowed depth for the algorithm.
         :param maximizing_player: Whether this is a max node (True) or a min node (False).
         :return: A tuple: (The min max algorithm value, The direction in case of max node or None in min mode)
         """
-        return self._rbMiniMaxHelp_(state, depth, maximizing_player)
+        result_state = self.rbMinimax_rec(state, depth, maximizing_player, time_limit)[1]
+        return result_state[0], self.getDir(state.pos, result_state.pos)
+
+    def getDir(self, pos1, pos2):
+        assert(pos2[0]-pos1[0] in [-1, 0, 1] and pos2[1]-pos1[1] in [-1, 0, 1])
+        return pos2[0]-pos1[0], pos2[1]-pos1[1]
 
 
 class AlphaBeta(SearchAlgos):
-
     def search(self, state, depth, maximizing_player, alpha=ALPHA_VALUE_INIT, beta=BETA_VALUE_INIT):
         """Start the AlphaBeta algorithm.
         :param state: The state to start from.
