@@ -51,3 +51,17 @@ def get_board_from_csv(board_file_name):
 def getPlayerPos(board, player):
     pos_np = np.where(board == player)
     return tuple(ax[0] for ax in pos_np)
+
+
+def nextTurn(current_turn):
+    return (current_turn % 2) + 1
+
+
+def playerCanMove(board, pos):
+    for d in get_directions():
+        i = pos[0] + d[0]
+        j = pos[1] + d[1]
+        if 0 <= i < len(board) and 0 <= j < len(board[0]) and (board[i][j] not in [-1, 1, 2]):  # then move is legal
+            return True
+    return False
+

@@ -14,77 +14,96 @@ import utils
 class Player(AbstractPlayer):
     def __init__(self, game_time, penalty_score):
         AbstractPlayer.__init__(self, game_time, penalty_score)  # keep the inheritance of the parent's (AbstractPlayer) __init__()
-        self.minimax = SearchAlgos.MiniMax(self.utility, self.succ, self.perform_move, self.goal, self.turn, self.heuristic_function) # TODO: think about performmove
+        self.minimax = SearchAlgos.MiniMax(self.utility, self.succ, self.perform_move, self.goal, self.heuristic_function, self.revert_move) # TODO: think about performmove
         #TODO: initialize more fields, if needed, and the Minimax algorithm from SearchAlgos.py
 
     class PlayerState:
-        def __init__(self, board, playerToMove, score):
+        def __init__(self, board, playerToMove, score, fruit_life):
             self.board = board
             self.playerToMove = playerToMove
-            self.pos = np.where(board == playerToMove)
+            self.pos = utils.getPlayerPos(board, playerToMove)
+            self.rival_pos = utils.getPlayerPos(board, utils.nextTurn(playerToMove))
             self.score = score
+            self.fruit_life = fruit_life
 
-    def playerCanMove(self, board, pos):
+    def goal(self, state):
+        return not utils.playerCanMove(state.board, state.pos)
+
+    def succ(self, state):  # ->List(directions)
+        succ_states = []
+        if state.playerToMove == 1:  # Maximizing
+            pos = state.pos
+        else:  # Minimizing
+            pos = state.rival_pos
         for d in self.directions:
             i = pos[0] + d[0]
             j = pos[1] + d[1]
-            if 0 <= i < len(board) and 0 <= j < len(board[0]) and (board[i][j] not in [-1, 1, 2]):  # then move is legal
-                return True
-        return False
+            if 0 <= i < len(state.board) and 0 <= j < len(state.board[0]) and (state.board[i][j] not in [-1, 1, 2]):  # then move is legal
+                succ_states.append(d)
+        return succ_states
 
-    def goal(self, state):
-        return not self.playerCanMove(state.board,state.pos)
+    def perform_move(self, state, d):  # ->succ_state
+        if state.playerToMove == 1:  # Maximizing
+            pos = state.pos
+            rival_pos = state.rival_pos
+        else:  # Minimizing
+            pos = state.rival_pos
+            rival_pos = state.pos
+        i = pos[0] + d[0]
+        j = pos[1] + d[1]
+        new_pos = (i, j)
 
-    def turn(self, state):
-        return state.playerToMove
+        new_board = state.board
+        new_board[state.pos] = -1
+        new_board[new_pos] = state.playerToMove
+
+        new_player_to_move = utils.nextTurn(state.playerToMove)
+        new_fruit_life = max(0, state.fruit_life - 1)
+
+        new_pos_val = 0
+        if new_fruit_life > 0:
+            new_pos_val = state.board[new_pos]
+        penalty = 0
+        if not utils.playerCanMove(new_board, new_pos) and utils.playerCanMove(new_board, rival_pos):
+            penalty = self.penalty_score
+        new_score = state.score
+        new_score[state.playerToMove - 1] += new_pos_val - penalty  # the fruit was on my pos + penalty if there any
+
+        return Player.PlayerState(new_board, new_player_to_move, new_score, new_fruit_life)
+
+    def revert_move(self, state, next_state):
+        penalty = 0
+        if not utils.playerCanMove(self.board, next_state.rival_pos) and utils.playerCanMove(self.board, next_state.pos):
+            penalty = self.penalty_score
+
+        fruit_val = next_state.score[state.playerToMove - 1] - state.score[state.playerToMove - 1] + penalty
+
+        self.board[next_state.rival_pos] = fruit_val
+        self.board[state.pos] = state.playerToMove
 
     def utility(self, state):
         assert(self.goal(state))
         return state.score[0] - state.score[1]
 
-    def succ(self, state, playerToMove):  # ->List(states)
-        succ_states = []
-        for d in self.directions:
-            i = state.pos[0] + d[0]
-            j = state.pos[1] + d[1]
-            if 0 <= i < len(state.board) and 0 <= j < len(state.board[0]) and (state.board[i][j] not in [-1, 1, 2]):  # then move is legal
-                new_state = self.perform_move(state, d, playerToMove)
-                succ_states.append(new_state)
-        return succ_states
-
-    def nextTurn(self,current_turn):
-        return current_turn % 2 + 1
-
-    def perform_move(self, state, d, playerToMove):  # ->succ_state
-        i = state.pos[0] + d[0]
-        j = state.pos[1] + d[1]
-        new_pos = (i, j)
-        penalty = 0
-        new_board = state.board
-        new_board[state.pos] = -1
-        new_board[new_pos] = playerToMove
-        new_player_to_move = self.nextTurn(playerToMove)
-        new_player_to_move_pos = utils.getPlayerPos(new_board, new_player_to_move)
-        if not self.playerCanMove(new_board, new_pos) and self.playerCanMove(new_board, new_player_to_move_pos):
-            penalty = self.penalty_score
-        new_score = state.score
-        new_score[playerToMove - 1] += state.board[new_pos] + penalty  # the fruit was on my pos + penalty if there any
-        return Player.PlayerState(new_board, new_player_to_move, new_score)
-
     def heuristic_function(self, state):  # 4 parameters: curr_score, md from fruits, fruits value, is reachable fruit
-        heuristic_val = state.score[0]-state.score[1]
+        """
+        Gets the state
+        Returns heuristic function based on below:
+        1.Gap between players score
+        2. Distance from an (3)is-reachable fruit
+        4. Manaheten Distance
+        """
         my_potential_score = 0
         rival_potential_score = 0
-        my_pos = state.playerToMove
-        rival_pos = np.where(state.board == self.nextTurn(state.playerToMove))
+
         for fruit_pos in np.where(state.board > 2):
-            my_dist_from_fruit = self.mDist(my_pos, fruit_pos)
-            rival_dist_from_fruit = self.mDist(rival_pos, fruit_pos)
-            if rival_dist_from_fruit < my_dist_from_fruit <= len(state.board):
+            my_dist_from_fruit = self.mDist(state.pos, fruit_pos)
+            rival_dist_from_fruit = self.mDist(state.rival_pos, fruit_pos)
+            if my_dist_from_fruit < rival_dist_from_fruit and my_dist_from_fruit <= state.fruit_life:
                 my_potential_score += state.board[fruit_pos]
-            elif my_dist_from_fruit < rival_dist_from_fruit <= len(state.board):
+            elif rival_dist_from_fruit < my_dist_from_fruit and rival_dist_from_fruit <= state.fruit_life:
                 rival_potential_score += state.board[fruit_pos]
-        return heuristic_val + my_potential_score - rival_potential_score
+        return (state.score[0] + my_potential_score) - (rival_potential_score + state.score[1])
 
     def mDist(self, pos1, pos2):
         return abs(pos1[0]-pos2[0]) + abs(pos1[1]-pos2[1])
@@ -100,7 +119,7 @@ class Player(AbstractPlayer):
         self.board = board
         self.pos = utils.getPlayerPos(board, 1)
 
-    def count_val(self, board,val):
+    def count_val(self, board, val):
         counter = len(np.where(board == val)[0])
         return counter
 
@@ -112,15 +131,18 @@ class Player(AbstractPlayer):
             - direction: tuple, specifing the Player's movement, chosen from self.directions
         """
         start = time.time()
-        cur_state = Player.PlayerState(self.board, 1, players_score)
+        cur_state = Player.PlayerState(self.board, 1, players_score, min(len(self.board), len(self.board[0])))
         depth = 1
-        move = self.minimax.search(cur_state, depth, 1, time_limit)[1]
+        last_valid_move = self.minimax.search(cur_state, depth, 1, time_limit)[1]
+        if last_valid_move is None:
+            return None
         while True:
-            try:   # TODO: handle when finished before max depth
-                depth += 1
-                time_elapsed = time.time() - start
-                move = self.minimax.search(cur_state, depth, 1, time_limit-time_elapsed)[1]
-            except TimeoutError:
+            depth += 1
+            time_elapsed = time.time() - start
+            move = self.minimax.search(cur_state, depth, 1, time_limit-time_elapsed)[1]
+            if move is not None:
+                last_valid_move = move
+            else:
                 assert (self.count_val(self.board, 1) == 1)
                 self.board[self.pos] = -1
                 assert (self.count_val(self.board, 1) == 0)
@@ -131,7 +153,10 @@ class Player(AbstractPlayer):
                 self.board[new_pos] = 1
                 assert self.count_val(self.board, 1) == 1
                 self.pos = new_pos
-                return move
+                return last_valid_move
+
+
+
 
     def set_rival_move(self, pos):
         """Update your info, given the new position of the rival.
