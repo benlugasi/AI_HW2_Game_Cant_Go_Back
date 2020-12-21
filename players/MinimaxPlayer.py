@@ -36,19 +36,23 @@ class Player(AbstractPlayer):
         output:
             - direction: tuple, specifing the Player's movement, chosen from self.directions
         """
+        epsilon = 1
+        time_limit = time_limit - epsilon
         start = time.time()
-        cur_state = Player.PlayerState(board=self.board, playerToMove=1, score=players_score, fruit_life=self.fruit_life)
+        cur_state = Player.PlayerState(board=self.board, playerToMove=1, score=players_score, fruit_life=self.fruit_life, fruit_taken=0)
         depth = 1
         self.fruit_life = max(0, self.fruit_life-1)
-        last_valid_move = self.minimax.search(cur_state, depth, 1, time_limit)[1]
+        last_valid_move = self.minimax.search(cur_state, depth, 1, time_limit)
         if last_valid_move is None:
             return None
+        else:
+            last_valid_move = last_valid_move[1]
         while True:
             depth += 1
             time_elapsed = time.time() - start
-            move = self.minimax.search(state=cur_state, depth=depth, maximizing_player=1, time_limit=time_limit-time_elapsed)[1]
+            move = self.minimax.search(state=cur_state, depth=depth, maximizing_player=1, time_limit=time_limit-time_elapsed)
             if move is not None:
-                last_valid_move = move
+                last_valid_move = move[1]
             else:
                 assert (utils.count_val(self.board, 1) == 1)
                 self.board[self.pos] = -1
@@ -72,11 +76,8 @@ class Player(AbstractPlayer):
         rival_prev_pos = utils.getPlayerPos(self.board, 2)
         self.fruit_life = max(0, self.fruit_life - 1)
         self.board[rival_prev_pos] = -1
-        i = rival_prev_pos[0] + pos[0]
-        j = rival_prev_pos[1] + pos[1]
-        new_pos = (i, j)
-        assert self.board[new_pos] not in [-1, 1, 2]
-        self.board[new_pos] = 2
+        assert self.board[pos] not in [-1, 1, 2]
+        self.board[pos] = 2
         assert utils.count_val(self.board, 2) == 1
 
     def update_fruits(self, fruits_on_board_dict):
@@ -87,12 +88,8 @@ class Player(AbstractPlayer):
                                     'value' is the value of this fruit.
         No output is expected.
         """
-        # translate the fruit's position from np.where to location on board
-        np_fruits_pos = np.where(self.board > 2)
-        ghost_fruits = tuple(ax[0] for ax in np_fruits_pos)
-
-        for fruit_pos in ghost_fruits:
-            if fruit_pos not in fruits_on_board_dict:
+        for fruit_pos in utils.getFruitsOnBoard(self.board):
+            if self.board[fruit_pos] not in fruits_on_board_dict:
                 self.board[fruit_pos] = 0
 
         for fruit_pos, fruit_val in fruits_on_board_dict.items():
@@ -102,12 +99,13 @@ class Player(AbstractPlayer):
 
     # _______ helper functions in class _______
     class PlayerState:
-        def __init__(self, board, playerToMove, score, fruit_life):
+        def __init__(self, board, playerToMove, score, fruit_life, fruit_taken):
             self.playerToMove = playerToMove
             self.pos = utils.getPlayerPos(board, playerToMove)
             self.rival_pos = utils.getPlayerPos(board, utils.nextTurn(playerToMove))
             self.score = score
             self.fruit_life = fruit_life
+            self.fruit_taken = fruit_taken
 
     # _______helper functions for MiniMax algorithm _________
     def goal(self, state):
@@ -115,55 +113,38 @@ class Player(AbstractPlayer):
 
     def succ(self, state, maximizing_player):  # ->List(directions)
         succ_states = []
-        if state.playerToMove == maximizing_player:  # Maximizing
-            pos = state.pos
-        else:  # Minimizing
-            pos = state.rival_pos
         for d in self.directions:
-            i = pos[0] + d[0]
-            j = pos[1] + d[1]
+            i = state.pos[0] + d[0]
+            j = state.pos[1] + d[1]
             if 0 <= i < len(self.board) and 0 <= j < len(self.board[0]) and (
                     self.board[i][j] not in [-1, 1, 2]):  # then move is legal
                 succ_states.append(d)
         return succ_states
 
     def perform_move(self, state, d, maximizing_player):  # ->succ_state
-        if state.playerToMove == maximizing_player:  # Maximizing
-            pos = state.pos
-            rival_pos = state.rival_pos
-        else:  # Minimizing
-            pos = state.rival_pos
-            rival_pos = state.pos
-        i = pos[0] + d[0]
-        j = pos[1] + d[1]
+        i = state.pos[0] + d[0]
+        j = state.pos[1] + d[1]
         new_pos = (i, j)
 
         self.board[state.pos] = -1
-        self.board[new_pos] = state.playerToMove
 
         new_player_to_move = utils.nextTurn(state.playerToMove)
         new_fruit_life = max(0, state.fruit_life - 1)
 
-        new_pos_val = 0
+        fruit_taken = 0
         if new_fruit_life > 0:
-            new_pos_val = self.board[new_pos]
+            fruit_taken = self.board[new_pos]
+        self.board[new_pos] = state.playerToMove
         penalty = 0
-        if not utils.playerCanMove(self.board, new_pos) and utils.playerCanMove(self.board, rival_pos):
+        if not utils.playerCanMove(self.board, new_pos) and utils.playerCanMove(self.board, state.rival_pos):
             penalty = self.penalty_score
         new_score = state.score
-        new_score[state.playerToMove - 1] += new_pos_val - penalty  # the fruit was on my pos + penalty if there any
+        new_score[state.playerToMove - 1] += fruit_taken - penalty  # the fruit was on my pos + penalty if there any
 
-        return Player.PlayerState(self.board, new_player_to_move, new_score, new_fruit_life)
+        return Player.PlayerState(self.board, new_player_to_move, new_score, new_fruit_life, fruit_taken)
 
     def revert_move(self, state, next_state):
-        penalty = 0
-        if not utils.playerCanMove(self.board, next_state.rival_pos) and utils.playerCanMove(self.board,
-                                                                                             next_state.pos):
-            penalty = self.penalty_score
-
-        fruit_val = next_state.score[state.playerToMove - 1] - state.score[state.playerToMove - 1] + penalty
-
-        self.board[next_state.rival_pos] = fruit_val
+        self.board[next_state.rival_pos] = next_state.fruit_taken
         self.board[state.pos] = state.playerToMove
 
     def utility(self, state):
@@ -181,7 +162,7 @@ class Player(AbstractPlayer):
         my_potential_score = 0
         rival_potential_score = 0
 
-        for fruit_pos in np.where(self.board > 2):
+        for fruit_pos in utils.getFruitsOnBoard(self.board):
             my_dist_from_fruit = utils.mDist(state.pos, fruit_pos)
             rival_dist_from_fruit = utils.mDist(state.rival_pos, fruit_pos)
             if my_dist_from_fruit < rival_dist_from_fruit and my_dist_from_fruit <= state.fruit_life:

@@ -52,7 +52,6 @@ def getPlayerPos(board, player):
     pos_np = np.where(board == player)
     return tuple(ax[0] for ax in pos_np)
 
-
 def nextTurn(current_turn):
     return (current_turn % 2) + 1
 
@@ -69,8 +68,9 @@ def playerCanMove(board, pos):
 #  gets pos1 & pos2
 #  returns the relative distance between pos2 and pos1 in directions tuple
 def getDir(pos1, pos2):
-    assert(pos2[0]-pos1[0] in [-1, 0, 1] and pos2[1]-pos1[1] in [-1, 0, 1])
-    return pos2[0]-pos1[0], pos2[1]-pos1[1]
+    result_pos = pos2[0]-pos1[0], pos2[1]-pos1[1]
+    assert(result_pos in [(-1, 0), (1, 0), (0, 1), (0, -1)])
+    return result_pos
 
 
 #  counts the number of val appearances on board
@@ -83,3 +83,16 @@ def count_val(board, val):
 def mDist(pos1, pos2):
     return abs(pos1[0]-pos2[0]) + abs(pos1[1]-pos2[1])
 
+
+def getFruitsOnBoard(board):
+    np_fruit_list = np.where(board > 2)
+    fruit_list = []
+    if len(np_fruit_list[0]) == 0:
+        return fruit_list
+    elif len(np_fruit_list[0]) == 1:
+        fruit_list.append((np_fruit_list[0], np_fruit_list[1]))  # appending tuple
+        return fruit_list
+    else:
+        for i in range(len(np_fruit_list[0])):
+            fruit_list.append(tuple(ax[i] for ax in np_fruit_list))
+        return fruit_list

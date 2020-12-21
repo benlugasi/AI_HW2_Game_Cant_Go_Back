@@ -28,7 +28,7 @@ class SearchAlgos:
 
 class MiniMax(SearchAlgos):
     def __init__(self, utility, succ, perform_move, goal, heuristic_function, revert_move):
-        SearchAlgos.__init__(utility, succ, perform_move, goal)
+        super().__init__(utility, succ, perform_move, goal)
         self.heuristic_function = heuristic_function
         self.revert_move = revert_move
 
@@ -40,29 +40,31 @@ class MiniMax(SearchAlgos):
             return [self.utility(state), state]
         if depth == 0:
             return [self.heuristic_function(state), state]
-
         # init for the recursion
-        state_to_return = state
         children = self.succ(state, maximizing_player) #(0,1),(1,0)...
         if state.playerToMove == maximizing_player:
-            curMaxState = [float('-inf'), state_to_return]
+            curMaxState = [float('-inf'), state]
             for c in children:
                 time_elapsed = time.time() - start
                 new_state = self.perform_move(state, c, maximizing_player)
                 child_value = self.rbMinimax_rec(new_state, depth - 1, maximizing_player, remaining_time - time_elapsed)
-                self.revert_move(state, new_state, c)
+                self.revert_move(state, new_state)
+                if child_value is None:
+                    return None
                 if child_value[0] > curMaxState[0]:
-                    curMaxState = child_value
+                    curMaxState = (child_value[0], new_state)
             return curMaxState
         else:
-            curMinState = [float('inf'), state_to_return]
+            curMinState = [float('inf'), state]
             for c in children:
                 time_elapsed = time.time() - start
                 new_state = self.perform_move(state, c, maximizing_player)
                 child_value = self.rbMinimax_rec(new_state, depth - 1, maximizing_player, remaining_time - time_elapsed)
-                self.revert_move(state, new_state, c)
+                self.revert_move(state, new_state)
+                if child_value is None:
+                    return None
                 if child_value[0] < curMinState[0]:
-                    curMinState = child_value
+                    curMinState = (child_value[0], new_state)
             return curMinState
 
     def search(self, state, depth, maximizing_player, time_limit = float('-inf')):
@@ -72,8 +74,15 @@ class MiniMax(SearchAlgos):
         :param maximizing_player: Whether this is a max node (True) or a min node (False).
         :return: A tuple: (The min max algorithm value, The direction in case of max node or None in min mode)
         """
-        result_state = self.rbMinimax_rec(state, depth, maximizing_player, time_limit)[1]
-        return result_state[0], utils.getDir(state.pos, result_state.pos)
+        result = self.rbMinimax_rec(state, depth, maximizing_player, time_limit)
+        if result is None:
+            return None
+        result_state = result[1]
+        if result_state.playerToMove == maximizing_player:  # Maximizing
+            result_pos = result_state.pos
+        else:  # Minimizing
+            result_pos = result_state.rival_pos
+        return result[0], utils.getDir(state.pos, result_pos)
 
 
 class AlphaBeta(SearchAlgos):
