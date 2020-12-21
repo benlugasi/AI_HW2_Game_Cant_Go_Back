@@ -2,11 +2,12 @@ import operator
 import numpy as np
 import os
 
-#TODO: edit the alpha and beta initialization values for AlphaBeta algorithm.
+# TODO: edit the alpha and beta initialization values for AlphaBeta algorithm.
 # instead of 'None', write the real initialization value, learned in class.
 # hint: you can use np.inf
 ALPHA_VALUE_INIT = None
-BETA_VALUE_INIT = None 
+BETA_VALUE_INIT = None
+
 
 def get_directions():
     """Returns all the possible directions of a player in the game as a list of tuples.
@@ -30,7 +31,7 @@ def get_board_from_csv(board_file_name):
     """
     board_path = os.path.join('boards', board_file_name)
     board = np.loadtxt(open(board_path, "rb"), delimiter=" ")
-    
+
     # mirror board
     board = np.flipud(board)
     i, j = len(board), len(board[0])
@@ -38,10 +39,10 @@ def get_board_from_csv(board_file_name):
     blocks = [(blocks[0][i], blocks[1][i]) for i in range(len(blocks[0]))]
     start_player_1 = np.where(board == 1)
     start_player_2 = np.where(board == 2)
-    
+
     if len(start_player_1[0]) != 1 or len(start_player_2[0]) != 1:
         raise Exception('The given board is not legal - too many start locations.')
-    
+
     start_player_1 = (start_player_1[0][0], start_player_1[1][0])
     start_player_2 = (start_player_2[0][0], start_player_2[1][0])
 
@@ -51,6 +52,7 @@ def get_board_from_csv(board_file_name):
 def getPlayerPos(board, player):
     pos_np = np.where(board == player)
     return tuple(ax[0] for ax in pos_np)
+
 
 def nextTurn(current_turn):
     return (current_turn % 2) + 1
@@ -90,7 +92,7 @@ def getFruitsOnBoard(board):
     if len(np_fruit_list[0]) == 0:
         return fruit_list
     elif len(np_fruit_list[0]) == 1:
-        fruit_list.append((np_fruit_list[0], np_fruit_list[1]))  # appending tuple
+        fruit_list.append((np.asscalar(np_fruit_list[0]), np.asscalar(np_fruit_list[1])))  # appending tuple
         return fruit_list
     else:
         for i in range(len(np_fruit_list[0])):

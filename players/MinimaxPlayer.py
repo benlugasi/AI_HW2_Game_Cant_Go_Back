@@ -25,9 +25,10 @@ class Player(AbstractPlayer):
             - board: np.array, a 2D matrix of the board.
         No output is expected.
         """
+        self.score = [0, 0]
         self.board = board
         self.pos = utils.getPlayerPos(board, 1)
-        self.fruit_life = min(len(self.board), len(self.board[0]))
+        self.fruit_life = 2*min(len(self.board), len(self.board[0]))
 
     def make_move(self, time_limit, players_score):
         """Make move with this Player.
@@ -36,10 +37,11 @@ class Player(AbstractPlayer):
         output:
             - direction: tuple, specifing the Player's movement, chosen from self.directions
         """
+        self.score = players_score
         epsilon = 1
         time_limit = time_limit - epsilon
         start = time.time()
-        cur_state = Player.PlayerState(board=self.board, playerToMove=1, score=players_score, fruit_life=self.fruit_life, fruit_taken=0)
+        cur_state = Player.PlayerState(board=self.board, playerToMove=1, fruit_life=self.fruit_life, fruit_taken=0, penalty_taken=0)
         depth = 1
         self.fruit_life = max(0, self.fruit_life-1)
         last_valid_move = self.minimax.search(cur_state, depth, 1, time_limit)
@@ -74,7 +76,6 @@ class Player(AbstractPlayer):
         """
         # rival (3,3) -> pos(3,4)
         rival_prev_pos = utils.getPlayerPos(self.board, 2)
-        self.fruit_life = max(0, self.fruit_life - 1)
         self.board[rival_prev_pos] = -1
         assert self.board[pos] not in [-1, 1, 2]
         self.board[pos] = 2
@@ -88,24 +89,24 @@ class Player(AbstractPlayer):
                                     'value' is the value of this fruit.
         No output is expected.
         """
+        self.fruits_on_board_dict = fruits_on_board_dict
         for fruit_pos in utils.getFruitsOnBoard(self.board):
-            if self.board[fruit_pos] not in fruits_on_board_dict:
+            if len(fruits_on_board_dict) == 0 or fruit_pos not in fruits_on_board_dict:
                 self.board[fruit_pos] = 0
 
         for fruit_pos, fruit_val in fruits_on_board_dict.items():
             assert self.board[fruit_pos] not in [-1, 1, 2]  # then fruit is still a live
             self.board[fruit_pos] = fruit_val
 
-
     # _______ helper functions in class _______
     class PlayerState:
-        def __init__(self, board, playerToMove, score, fruit_life, fruit_taken):
+        def __init__(self, board, playerToMove, fruit_life, fruit_taken, penalty_taken):
             self.playerToMove = playerToMove
             self.pos = utils.getPlayerPos(board, playerToMove)
             self.rival_pos = utils.getPlayerPos(board, utils.nextTurn(playerToMove))
-            self.score = score
             self.fruit_life = fruit_life
             self.fruit_taken = fruit_taken
+            self.penalty_taken = penalty_taken
 
     # _______helper functions for MiniMax algorithm _________
     def goal(self, state):
@@ -134,22 +135,26 @@ class Player(AbstractPlayer):
         fruit_taken = 0
         if new_fruit_life > 0:
             fruit_taken = self.board[new_pos]
-        self.board[new_pos] = state.playerToMove
-        penalty = 0
-        if not utils.playerCanMove(self.board, new_pos) and utils.playerCanMove(self.board, state.rival_pos):
-            penalty = self.penalty_score
-        new_score = state.score
-        new_score[state.playerToMove - 1] += fruit_taken - penalty  # the fruit was on my pos + penalty if there any
 
-        return Player.PlayerState(self.board, new_player_to_move, new_score, new_fruit_life, fruit_taken)
+        self.board[new_pos] = state.playerToMove
+        penalty_taken = 0
+        if not utils.playerCanMove(self.board, new_pos) and utils.playerCanMove(self.board, state.rival_pos):
+            penalty_taken = self.penalty_score
+        self.score[state.playerToMove - 1] = self.score[state.playerToMove - 1] + fruit_taken - penalty_taken  # the fruit was on my pos + penalty if there any
+
+        return Player.PlayerState(self.board, new_player_to_move, new_fruit_life, fruit_taken, penalty_taken)
 
     def revert_move(self, state, next_state):
-        self.board[next_state.rival_pos] = next_state.fruit_taken
-        self.board[state.pos] = state.playerToMove
+        if next_state.rival_pos in self.fruits_on_board_dict:  # reverts pos from fruit dictionary
+            self.board[next_state.rival_pos] = self.fruits_on_board_dict[next_state.rival_pos]
+        else:
+            self.board[next_state.rival_pos] = 0
+        self.board[state.pos] = state.playerToMove  # reverts pos to states pos
+        self.score[state.playerToMove-1] = self.score[state.playerToMove-1] - next_state.fruit_taken + next_state.penalty_taken   # reverts score
 
     def utility(self, state):
         assert (self.goal(state))
-        return state.score[0] - state.score[1]
+        return self.score[0] - self.score[1]
 
     def heuristic_function(self, state):  # 4 parameters: curr_score, md from fruits, fruits value, is reachable fruit
         """
@@ -169,5 +174,5 @@ class Player(AbstractPlayer):
                 my_potential_score += self.board[fruit_pos]
             elif rival_dist_from_fruit < my_dist_from_fruit and rival_dist_from_fruit <= state.fruit_life:
                 rival_potential_score += self.board[fruit_pos]
-        return (state.score[0] + my_potential_score) - (rival_potential_score + state.score[1])
+        return (self.score[0] + my_potential_score) - (rival_potential_score + self.score[1])
 
