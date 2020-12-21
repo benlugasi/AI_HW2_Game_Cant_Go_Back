@@ -65,3 +65,21 @@ def playerCanMove(board, pos):
             return True
     return False
 
+
+#  gets pos1 & pos2
+#  returns the relative distance between pos2 and pos1 in directions tuple
+def getDir(pos1, pos2):
+    assert(pos2[0]-pos1[0] in [-1, 0, 1] and pos2[1]-pos1[1] in [-1, 0, 1])
+    return pos2[0]-pos1[0], pos2[1]-pos1[1]
+
+
+#  counts the number of val appearances on board
+def count_val(board, val):
+    counter = len(np.where(board == val)[0])
+    return counter
+
+
+# returns the Manheten Distance between pos2 and pos1
+def mDist(pos1, pos2):
+    return abs(pos1[0]-pos2[0]) + abs(pos1[1]-pos2[1])
+
