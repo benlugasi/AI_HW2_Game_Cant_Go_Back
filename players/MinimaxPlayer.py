@@ -25,7 +25,6 @@ class Player(AbstractPlayer):
             - board: np.array, a 2D matrix of the board.
         No output is expected.
         """
-        self.score = [0, 0]
         self.board = board
         self.pos = utils.getPlayerPos(board, 1)
         self.fruit_life = 2*min(len(self.board), len(self.board[0]))
@@ -38,35 +37,37 @@ class Player(AbstractPlayer):
             - direction: tuple, specifing the Player's movement, chosen from self.directions
         """
         self.score = players_score
-        epsilon = 1
+        epsilon = 0.05
         time_limit = time_limit - epsilon
         start = time.time()
         cur_state = Player.PlayerState(board=self.board, playerToMove=1, fruit_life=self.fruit_life, fruit_taken=0, penalty_taken=0)
         depth = 1
         self.fruit_life = max(0, self.fruit_life-1)
-        last_valid_move = self.minimax.search(cur_state, depth, 1, time_limit)
+        last_valid_move = self.minimax.search(state=cur_state, depth=depth, maximizing_player=1, time_limit=time_limit)
         if last_valid_move is None:
             return None
         else:
             last_valid_move = last_valid_move[1]
-        while True:
+        while depth < len(self.board)*len(self.board[0]):
             depth += 1
             time_elapsed = time.time() - start
             move = self.minimax.search(state=cur_state, depth=depth, maximizing_player=1, time_limit=time_limit-time_elapsed)
             if move is not None:
                 last_valid_move = move[1]
             else:
-                assert (utils.count_val(self.board, 1) == 1)
-                self.board[self.pos] = -1
-                assert (utils.count_val(self.board, 1) == 0)
-                i = self.pos[0] + last_valid_move[0]
-                j = self.pos[1] + last_valid_move[1]
-                new_pos = (i, j)
-                assert self.board[new_pos] not in [-1, 1, 2]
-                self.board[new_pos] = 1
-                assert utils.count_val(self.board, 1) == 1
-                self.pos = new_pos
-                return last_valid_move
+                break
+        assert (utils.count_val(self.board, 1) == 1)
+        self.board[self.pos] = -1
+        assert (utils.count_val(self.board, 1) == 0)
+        i = self.pos[0] + last_valid_move[0]
+        j = self.pos[1] + last_valid_move[1]
+        new_pos = (i, j)
+        assert self.board[new_pos] not in [-1, 1, 2]
+        self.board[new_pos] = 1
+        assert utils.count_val(self.board, 1) == 1
+        self.pos = new_pos
+        print(f"(1) Minimax depth: {depth}")
+        return last_valid_move
 
     def set_rival_move(self, pos):
         """Update your info, given the new position of the rival.
