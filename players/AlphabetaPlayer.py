@@ -44,7 +44,17 @@ class Player(AbstractPlayer):
         self.fruit_life = max(0, self.fruit_life-1)
         last_valid_move = self.alphaBeta.search(state=cur_state, depth=depth, maximizing_player=1, time_limit=time_limit)
         if last_valid_move is None:
-            return None
+            for d in self.directions:
+                i = self.pos[0] + d[0]
+                j = self.pos[1] + d[1]
+                new_pos = (i, j)
+                if 0 <= i < len(self.board) and 0 <= j < len(self.board[0]) and self.board[new_pos] not in [-1, 1, 2]:
+                    self.board[self.pos] = -1
+                    self.board[new_pos] = 1
+                    self.pos = new_pos
+                    self.remaining_time -= time.time() - start
+                    print(f"(2) alpha_beta random depth: {depth}")
+                    return d
         else:
             last_valid_move = last_valid_move[1]
         while depth < len(self.board)*len(self.board[0]):  # total number of possible steps on the board
@@ -68,7 +78,6 @@ class Player(AbstractPlayer):
         print(f"(2) alpha_beta depth: {depth}")
         return last_valid_move
 
-
     #def set_rival_move(self, pos):
         """Update your info, given the new position of the rival.
         input:
@@ -80,7 +89,6 @@ class Player(AbstractPlayer):
         # assert self.board[pos] not in [-1, 1, 2]
         # self.board[pos] = 2
         # assert utils.count_val(self.board, 2) == 1
-
 
 
     #def update_fruits(self, fruits_on_board_dict):
