@@ -2,16 +2,20 @@
 MiniMax Player with AlphaBeta pruning and global time
 """
 from players.AbstractPlayer import AbstractPlayer
-#TODO: you can import more modules, if needed
+import SearchAlgos
+import time
+import utils
 
 
 class Player(AbstractPlayer):
     def __init__(self, game_time, penalty_score):
         AbstractPlayer.__init__(self, game_time, penalty_score) # keep the inheritance of the parent's (AbstractPlayer) __init__()
+        self.alphaBeta = SearchAlgos.AlphaBeta(self.utility, self.succ, self.perform_move, self.goal,
+                                               self.heuristic_function, self.revert_move)
         #TODO: initialize more fields, if needed, and the AlphaBeta algorithm from SearchAlgos.py
 
 
-    def set_game_params(self, board):
+    #def set_game_params(self, board):
         """Set the game parameters needed for this player.
         This function is called before the game starts.
         (See GameWrapper.py for more info where it is called)
@@ -19,8 +23,7 @@ class Player(AbstractPlayer):
             - board: np.array, a 2D matrix of the board.
         No output is expected.
         """
-        #TODO: erase the following line and implement this function.
-        raise NotImplementedError
+
     
 
     def make_move(self, time_limit, players_score):
@@ -34,27 +37,22 @@ class Player(AbstractPlayer):
         raise NotImplementedError
 
 
-    def set_rival_move(self, pos):
-        """Update your info, given the new position of the rival.
-        input:
-            - pos: tuple, the new position of the rival.
-        No output is expected
-        """
-        #TODO: erase the following line and implement this function.
-        raise NotImplementedError
+    # def set_rival_move(self, pos):
+    #     """Update your info, given the new position of the rival.
+    #     input:
+    #         - pos: tuple, the new position of the rival.
+    #     No output is expected
+    #     """
+    #     AbstractPlayer.set_rival_move(self, pos=pos)
+
+    def make_move(self,time_limit, player_score):
+     raise NotImplementedError
 
 
-    def update_fruits(self, fruits_on_board_dict):
-        """Update your info on the current fruits on board (if needed).
-        input:
-            - fruits_on_board_dict: dict of {pos: value}
-                                    where 'pos' is a tuple describing the fruit's position on board,
-                                    'value' is the value of this fruit.
-        No output is expected.
-        """
-        #TODO: erase the following line and implement this function. In case you choose not to use this function, 
-        # use 'pass' instead of the following line.
-        raise NotImplementedError
+
+    # #TODO: erase the following line and implement this function. In case you choose not to use this function,
+    # # use 'pass' instead of the following line.
+    #     AbstractPlayer.update_fruits(self,fruits_on_board_dict=fruits_on_board_dict)
 
 
     ########## helper functions in class ##########
