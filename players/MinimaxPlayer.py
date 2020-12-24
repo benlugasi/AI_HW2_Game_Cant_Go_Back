@@ -1,10 +1,7 @@
 """
 MiniMax Player
 """
-from numpy.core._multiarray_umath import ndarray
-
 from players.AbstractPlayer import AbstractPlayer
-import numpy as np
 import time
 import SearchAlgos
 import utils

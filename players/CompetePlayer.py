@@ -39,7 +39,7 @@ class Player(AbstractPlayer):
         time_frame = self.calc_time_frame(self.board)
         self.score = players_score
         time_frame_epsilon = 0.01
-        time_frame = time_frame - time_frame_epsilon # attempt to suit the time to the global limit
+        time_frame -= time_frame_epsilon
         time_limit_epsilon = 0.05
         time_limit = time_limit - time_limit_epsilon
         time_frame = min(time_frame, time_limit)
@@ -172,8 +172,7 @@ class Player(AbstractPlayer):
         else:
             self.board[next_state.rival_pos] = 0
         self.board[state.pos] = state.playerToMove  # reverts pos to states pos
-        self.score[state.playerToMove - 1] = self.score[
-                                                 state.playerToMove - 1] - next_state.fruit_taken + next_state.penalty_taken  # reverts score
+        self.score[state.playerToMove - 1] = self.score[state.playerToMove - 1] - next_state.fruit_taken + next_state.penalty_taken  # reverts score
 
     def utility(self, state):
        # assert (self.goal(state))

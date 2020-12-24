@@ -35,7 +35,7 @@ class Player(AbstractPlayer):
         self.score = players_score
         cur_state = Player.PlayerState(board=self.board, playerToMove=1, fruit_life=self.fruit_life, fruit_taken=0,
                                        penalty_taken=0)
-        depth = 2
+        depth = 3
         self.fruit_life = max(0, self.fruit_life - 1)
         last_valid_move = self.alphaBeta.search(state=cur_state, depth=depth, maximizing_player=1)
         last_valid_move = last_valid_move[1]

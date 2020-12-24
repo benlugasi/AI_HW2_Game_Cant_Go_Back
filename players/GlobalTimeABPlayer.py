@@ -24,7 +24,7 @@ class Player(AbstractPlayer):
         """
         self.board = board
         self.pos = utils.getPlayerPos(board, 1)
-        self.fruit_life = 2*min(len(self.board), len(self.board[0]))
+        self.fruit_life = 2 * min(len(self.board), len(self.board[0]))
 
     def make_move(self, time_limit, players_score):
         """Make move with this Player.
@@ -80,6 +80,7 @@ class Player(AbstractPlayer):
         self.board[new_pos] = 1
       #  assert utils.count_val(self.board, 1) == 1
         self.pos = new_pos
+        self.remaining_time -= (time.time() - start)
         return last_valid_move
 
     def calc_time_frame(self, board):
