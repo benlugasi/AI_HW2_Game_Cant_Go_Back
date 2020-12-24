@@ -4,7 +4,6 @@ MiniMax Player with AlphaBeta pruning with light heuristic
 from players.AbstractPlayer import AbstractPlayer
 import SearchAlgos
 import utils
-#TODO: you can import more modules, if needed
 
 
 class Player(AbstractPlayer):
@@ -40,17 +39,16 @@ class Player(AbstractPlayer):
         self.fruit_life = max(0, self.fruit_life - 1)
         last_valid_move = self.alphaBeta.search(state=cur_state, depth=depth, maximizing_player=1)
         last_valid_move = last_valid_move[1]
-        assert (utils.count_val(self.board, 1) == 1)
+       # assert (utils.count_val(self.board, 1) == 1)
         self.board[self.pos] = -1
-        assert (utils.count_val(self.board, 1) == 0)
+       # assert (utils.count_val(self.board, 1) == 0)
         i = self.pos[0] + last_valid_move[0]
         j = self.pos[1] + last_valid_move[1]
         new_pos = (i, j)
-        assert self.board[new_pos] not in [-1, 1, 2]
+       # assert self.board[new_pos] not in [-1, 1, 2]
         self.board[new_pos] = 1
-        assert utils.count_val(self.board, 1) == 1
+       # assert utils.count_val(self.board, 1) == 1
         self.pos = new_pos
-        print(f"LightABPlayer depth: {depth}")
         return last_valid_move
 
     def set_rival_move(self, pos):
@@ -61,9 +59,9 @@ class Player(AbstractPlayer):
         """
         rival_prev_pos = utils.getPlayerPos(self.board, 2)
         self.board[rival_prev_pos] = -1
-        assert self.board[pos] not in [-1, 1, 2]
+       # assert self.board[pos] not in [-1, 1, 2]
         self.board[pos] = 2
-        assert utils.count_val(self.board, 2) == 1
+       # assert utils.count_val(self.board, 2) == 1
 
     def update_fruits(self, fruits_on_board_dict):
         """Update your info on the current fruits on board (if needed).
@@ -79,7 +77,7 @@ class Player(AbstractPlayer):
                 self.board[fruit_pos] = 0
 
         for fruit_pos, fruit_val in fruits_on_board_dict.items():
-            assert self.board[fruit_pos] not in [-1, 1, 2]  # then fruit is still a live
+           # assert self.board[fruit_pos] not in [-1, 1, 2]  # then fruit is still a live
             self.board[fruit_pos] = fruit_val
 
     # ######## helper functions in class ##########
@@ -141,7 +139,7 @@ class Player(AbstractPlayer):
                                                  state.playerToMove - 1] - next_state.fruit_taken + next_state.penalty_taken  # reverts score
 
     def utility(self, state):
-        assert (self.goal(state))
+      #  assert (self.goal(state))
         return self.score[0] - self.score[1]
 
     def state_score(self, board, pos):

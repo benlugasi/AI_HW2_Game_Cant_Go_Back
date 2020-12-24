@@ -2,7 +2,6 @@ import operator
 import numpy as np
 import os
 
-# TODO: edit the alpha and beta initialization values for AlphaBeta algorithm.
 # instead of 'None', write the real initialization value, learned in class.
 # hint: you can use np.inf
 ALPHA_VALUE_INIT = float('-inf')
@@ -71,7 +70,7 @@ def playerCanMove(board, pos):
 #  returns the relative distance between pos2 and pos1 in directions tuple
 def getDir(pos1, pos2):
     result_pos = pos2[0]-pos1[0], pos2[1]-pos1[1]
-    assert(result_pos in [(-1, 0), (1, 0), (0, 1), (0, -1)])
+   # assert(result_pos in [(-1, 0), (1, 0), (0, 1), (0, -1)])
     return result_pos
 
 

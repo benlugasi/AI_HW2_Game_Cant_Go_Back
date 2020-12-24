@@ -5,8 +5,6 @@ from players.AbstractPlayer import AbstractPlayer
 import SearchAlgos
 import utils
 
-# TODO: you can import more modules, if needed
-
 
 class Player(AbstractPlayer):
     def __init__(self, game_time, penalty_score):
@@ -51,7 +49,6 @@ class Player(AbstractPlayer):
         self.board[new_pos] = 1
         assert utils.count_val(self.board, 1) == 1
         self.pos = new_pos
-        print(f"HeavyABPlayer depth: {depth}")
         return last_valid_move
 
     def set_rival_move(self, pos):
@@ -62,9 +59,9 @@ class Player(AbstractPlayer):
         """
         rival_prev_pos = utils.getPlayerPos(self.board, 2)
         self.board[rival_prev_pos] = -1
-        assert self.board[pos] not in [-1, 1, 2]
+      #  assert self.board[pos] not in [-1, 1, 2]
         self.board[pos] = 2
-        assert utils.count_val(self.board, 2) == 1
+      #  assert utils.count_val(self.board, 2) == 1
 
     def update_fruits(self, fruits_on_board_dict):
         """Update your info on the current fruits on board (if needed).
@@ -80,7 +77,7 @@ class Player(AbstractPlayer):
                 self.board[fruit_pos] = 0
 
         for fruit_pos, fruit_val in fruits_on_board_dict.items():
-            assert self.board[fruit_pos] not in [-1, 1, 2]  # then fruit is still a live
+          #  assert self.board[fruit_pos] not in [-1, 1, 2]  # then fruit is still a live
             self.board[fruit_pos] = fruit_val
 
     # ######## helper functions in class ##########
@@ -142,7 +139,7 @@ class Player(AbstractPlayer):
                                                  state.playerToMove - 1] - next_state.fruit_taken + next_state.penalty_taken  # reverts score
 
     def utility(self, state):
-        assert (self.goal(state))
+      #  assert (self.goal(state))
         return self.score[0] - self.score[1]
 
     def heuristic_function(self, state):  # 4 parameters: curr_score, md from fruits, fruits value, is reachable fruit

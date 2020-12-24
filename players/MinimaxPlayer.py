@@ -8,14 +8,13 @@ import numpy as np
 import time
 import SearchAlgos
 import utils
-#TODO: you can import more modules, if needed
 
 
 class Player(AbstractPlayer):
     def __init__(self, game_time, penalty_score):
         AbstractPlayer.__init__(self, game_time, penalty_score)  # keep the inheritance of the parent's (AbstractPlayer) __init__()
         self.minimax = SearchAlgos.MiniMax(self.utility, self.succ, self.perform_move, self.goal, self.heuristic_function, self.revert_move)
-        #TODO: initialize more fields, if needed, and the Minimax algorithm from SearchAlgos.py
+
 
     def set_game_params(self, board):
         """Set the game parameters needed for this player.
@@ -53,8 +52,6 @@ class Player(AbstractPlayer):
                     self.board[self.pos] = -1
                     self.board[new_pos] = 1
                     self.pos = new_pos
-                    self.remaining_time -= time.time() - start
-                    print(f"(1) Minimax random depth: {depth}")
                     return d
         else:
             last_valid_move = last_valid_move[1]
@@ -66,17 +63,16 @@ class Player(AbstractPlayer):
                 last_valid_move = move[1]
             else:
                 break
-        assert (utils.count_val(self.board, 1) == 1)
+       # assert (utils.count_val(self.board, 1) == 1)
         self.board[self.pos] = -1
-        assert (utils.count_val(self.board, 1) == 0)
+       # assert (utils.count_val(self.board, 1) == 0)
         i = self.pos[0] + last_valid_move[0]
         j = self.pos[1] + last_valid_move[1]
         new_pos = (i, j)
-        assert self.board[new_pos] not in [-1, 1, 2]
+       # assert self.board[new_pos] not in [-1, 1, 2]
         self.board[new_pos] = 1
-        assert utils.count_val(self.board, 1) == 1
+       # assert utils.count_val(self.board, 1) == 1
         self.pos = new_pos
-        print(f"(1) Minimax depth: {depth}")
         return last_valid_move
 
     def set_rival_move(self, pos):
@@ -88,9 +84,9 @@ class Player(AbstractPlayer):
         # rival (3,3) -> pos(3,4)
         rival_prev_pos = utils.getPlayerPos(self.board, 2)
         self.board[rival_prev_pos] = -1
-        assert self.board[pos] not in [-1, 1, 2]
+       # assert self.board[pos] not in [-1, 1, 2]
         self.board[pos] = 2
-        assert utils.count_val(self.board, 2) == 1
+       # assert utils.count_val(self.board, 2) == 1
 
     def update_fruits(self, fruits_on_board_dict):
         """Update your info on the current fruits on board (if needed).
@@ -106,7 +102,7 @@ class Player(AbstractPlayer):
                 self.board[fruit_pos] = 0
 
         for fruit_pos, fruit_val in fruits_on_board_dict.items():
-            assert self.board[fruit_pos] not in [-1, 1, 2]  # then fruit is still a live
+          #  assert self.board[fruit_pos] not in [-1, 1, 2]  # then fruit is still a live
             self.board[fruit_pos] = fruit_val
 
     # _______ helper functions in class _______
@@ -164,7 +160,7 @@ class Player(AbstractPlayer):
         self.score[state.playerToMove-1] = self.score[state.playerToMove-1] - next_state.fruit_taken + next_state.penalty_taken   # reverts score
 
     def utility(self, state):
-        assert (self.goal(state))
+      #  assert (self.goal(state))
         return self.score[0] - self.score[1]
 
     def heuristic_function(self, state):  # 4 parameters: curr_score, md from fruits, fruits value, is reachable fruit

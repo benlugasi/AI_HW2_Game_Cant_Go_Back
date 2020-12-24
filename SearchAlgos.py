@@ -4,7 +4,6 @@ import time
 import utils
 from utils import ALPHA_VALUE_INIT, BETA_VALUE_INIT
 
-#TODO: you can import more modules, if needed
 
 
 class SearchAlgos:
@@ -34,7 +33,7 @@ class MiniMax(SearchAlgos):
 
     def rbMinimax_rec(self, state, depth, maximizing_player,remaining_time):
         if remaining_time <= 0:
-            return None #  todo: Think about last iteration leave it to Masha
+            return None
         start = time.time()
         if self.goal(state):
             return [self.utility(state), state]
